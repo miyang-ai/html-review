@@ -7,6 +7,7 @@
 | `permissions.md` | 隐私权规范表单：单一用途、权限用途、远程代码、数据使用 |
 | `screenshots/01–04*.png` | 1280×800 截图 4 张 |
 | `screenshots/promo-small-440x280.png` | 小型宣传图 |
+| `screenshots/promo-marquee-1400x560.png` | 大型宣传图（精选横幅位） |
 | `../extension/icons/icon-128.png` | 商店图标 |
 
 ## 重新生成

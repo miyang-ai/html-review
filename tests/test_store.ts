@@ -26,6 +26,16 @@ describe('sameHtml', () => {
   })
 })
 
+describe('旧版换行迁移', () => {
+  it('原文无 \\n 时把新文里的 \\n 换成 <br>；原文含 \\n 时保持不动', () => {
+    const s = makeStore()
+    s.upsertEdit(null, { anchor, beforeHtml: '原文', afterHtml: '第一行，\n第二行', beforeText: '原文', afterText: '第一行， 第二行' })
+    s.upsertEdit(null, { anchor, beforeHtml: '源码\n  缩进', afterHtml: '源码\n  缩进改', beforeText: '源码 缩进', afterText: '源码 缩进改' })
+    const reloaded = makeStore()
+    expect(reloaded.items.map((i) => (i.kind === 'edit' ? i.afterHtml : ''))).toEqual(['第一行，<br>第二行', '源码\n  缩进改'])
+  })
+})
+
 describe('ReviewStore 改字', () => {
   it('新建、合并、改回原文时删除', () => {
     const s = makeStore()

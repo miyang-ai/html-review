@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-23 00:01
+
+### BUG：改字时 Shift+Enter 换行，退出编辑后不换行
+**时间**：2026-10-23 00:01
+**现象**：编辑中按 Shift+Enter 能看到换行，按 Enter 退出编辑后又连成一行，刷新后也一样
+**根因**：编辑元素用 `contenteditable="plaintext-only"`，Chrome 会把它的 `white-space` 强制改成 `pre-wrap`，`insertLineBreak` 写进去的是 `\n` 字符（`insertHTML` 插 `<br>` 会被丢弃）。退出编辑恢复页面原样式（`normal`）后，`\n` 被合并成空格；修改单里的 `afterHtml` 也是 `\n`，AI 照着改同样不换行。同一原因还会让粘贴的多行文字丢失换行、源码里带缩进的段落在编辑中显示异常
+**修复**：
+- 编辑改用 `contenteditable="true"`，编辑中的空白规则与页面一致，Shift+Enter 写成 `<br>`
+- `beforeinput` 拦截格式命令（加粗、斜体等）和拖放；插入段落改为插入 `<br>`
+- 粘贴只取纯文本，按行插入，行间写 `<br>`
+- 加载本地记录时迁移旧数据：原文不含 `\n` 的改字记录，新文里的 `\n` 换成 `<br>`
+**修复文件**：`src/modes/textEdit.ts`、`src/store.ts`、`tests/test_store.ts`、`tests/e2e/test_browser.mjs`、`PRD.md`
+**状态**：✅ 已修复（单元测试 59 项、端到端 29 项通过）
+
 ## 2026-10-22 23:08 · v0.2.0
 
 ### 新增：Chrome 浏览器插件

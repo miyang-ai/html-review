@@ -22,25 +22,13 @@ interface Session {
 
 const PERSIST_DELAY = 500
 
-let plaintextOnlySupport: boolean | null = null
 /**
- * 背景：contenteditable="true" 允许 Ctrl+B、粘贴富文本，会把格式垃圾带进源文件。
- * 设计意图：优先用 plaintext-only（Chrome / Safari / 新版 Firefox 支持），只允许改文字，已有的行内标签保持不动；
- * 不支持时退回 true，并在 paste 事件里强制按纯文本插入。
+ * 背景：contenteditable="true" 允许 Ctrl+B、拖放富文本，会把格式标签带进源文件。
+ * 设计意图：用 beforeinput 拦掉格式命令和拖放；粘贴在 paste 事件里按纯文本插入（见 onPaste）。
+ * 放弃了 plaintext-only：Chrome 会把 plaintext-only 元素的 white-space 强制改成 pre-wrap，
+ * Shift+Enter 写进去的是 \n 字符，编辑中看着换了行，退出编辑恢复页面样式后 \n 被合并成空格，修改单里也是 \n。
  */
-function supportsPlaintextOnly(): boolean {
-  if (plaintextOnlySupport === null) {
-    const probe = document.createElement('div')
-    try {
-      probe.contentEditable = 'plaintext-only'
-      plaintextOnlySupport = probe.contentEditable === 'plaintext-only'
-    } catch (err) {
-      log.info('浏览器不支持 plaintext-only，退回 contenteditable=true', err)
-      plaintextOnlySupport = false
-    }
-  }
-  return plaintextOnlySupport
-}
+const BLOCKED_INPUT = /^(format|insertFromDrop$|deleteByDrag$|insertFromPasteAsQuotation$)/
 
 /**
  * 背景：改字模式下用户点到哪段字就改哪段，边打字边保存，回车结束，Esc 放弃。
@@ -111,8 +99,9 @@ export class TextEditor {
     const own = unit.getAttribute('contenteditable')
     if (own !== null) unit.setAttribute('data-hr-own-editable', own)
     unit.setAttribute('data-hr-editing', '')
-    unit.contentEditable = supportsPlaintextOnly() ? 'plaintext-only' : 'true'
+    unit.contentEditable = 'true'
     unit.spellcheck = false
+    unit.addEventListener('beforeinput', this.onBeforeInput)
     unit.addEventListener('input', this.onInput)
     unit.addEventListener('focusout', this.onFocusOut)
     unit.addEventListener('paste', this.onPaste)
@@ -155,6 +144,20 @@ export class TextEditor {
     }
   }
 
+  /**
+   * 背景：Enter 已在 keydown 里拦成提交，但 Ctrl+O 之类的系统编辑命令仍可能插入段落，Chrome 会生成 <div>。
+   * 设计意图：格式命令和拖放直接丢弃；插入段落改成插入 <br>，和 Shift+Enter 结果一致。
+   */
+  private onBeforeInput = (e: InputEvent): void => {
+    if (BLOCKED_INPUT.test(e.inputType)) {
+      e.preventDefault()
+      log.info('已拦截格式 / 拖放输入', e.inputType)
+    } else if (e.inputType === 'insertParagraph') {
+      e.preventDefault()
+      document.execCommand('insertLineBreak')
+    }
+  }
+
   private onInput = (): void => {
     window.clearTimeout(this.persistTimer)
     this.persistTimer = window.setTimeout(() => this.persist(), PERSIST_DELAY)
@@ -175,11 +178,18 @@ export class TextEditor {
     this.commit()
   }
 
+  /**
+   * 背景：粘贴富文本会带进格式标签；直接 insertText 一段含 \n 的文字，Chrome 会把后面几行包进 <div>。
+   * 设计意图：只取纯文本，按行插入，行与行之间用 insertLineBreak 写成 <br>，和手动换行结果一致，也能撤销。
+   */
   private onPaste = (e: ClipboardEvent): void => {
-    if (!this.s || this.s.el.contentEditable === 'plaintext-only') return
+    if (!this.s) return
     e.preventDefault()
-    const text = e.clipboardData?.getData('text/plain') ?? ''
-    document.execCommand('insertText', false, text)
+    const lines = (e.clipboardData?.getData('text/plain') ?? '').split(/\r\n|\r|\n/)
+    lines.forEach((line, i) => {
+      if (i > 0) document.execCommand('insertLineBreak')
+      if (line) document.execCommand('insertText', false, line)
+    })
   }
 
   /**
@@ -230,6 +240,7 @@ export class TextEditor {
     this.s = null
     window.clearTimeout(this.persistTimer)
     const el = s.el
+    el.removeEventListener('beforeinput', this.onBeforeInput)
     el.removeEventListener('input', this.onInput)
     el.removeEventListener('focusout', this.onFocusOut)
     el.removeEventListener('paste', this.onPaste)

@@ -24,6 +24,22 @@ export function sameHtml(a: string, b: string): boolean {
   return norm(a) === norm(b)
 }
 
+/**
+ * 背景：v0.2.0 及以前用 plaintext-only 编辑，Shift+Enter 和粘贴多行写进 afterHtml 的是 \n 字符，
+ * 页面上显示为空格，修改单交给 AI 也不会换行。
+ * 设计意图：原文不含 \n 时，新文里的 \n 只可能来自旧版编辑器，换成 <br>；原文含 \n（源码排版）时无法区分，保持不动。
+ * 约束：只改内存中的记录，下次保存时写回存储；返回迁移的条数供日志使用。
+ */
+export function migrateLineBreaks(items: ReviewItem[]): number {
+  let n = 0
+  for (const item of items) {
+    if (item.kind !== 'edit' || !item.afterHtml.includes('\n') || item.beforeHtml.includes('\n')) continue
+    item.afterHtml = item.afterHtml.replace(/\r?\n/g, '<br>')
+    n++
+  }
+  return n
+}
+
 /** 背景：新页面或存储损坏时需要一个干净的初始状态。 */
 export function emptyState(page: string, title: string): PageState {
   return { version: 1, page, title, seq: { edit: 0, comment: 0, reply: 0 }, items: [] }
@@ -70,7 +86,8 @@ export class ReviewStore {
         ...parsed,
         seq: { edit: parsed.seq?.edit ?? 0, comment: parsed.seq?.comment ?? 0, reply: parsed.seq?.reply ?? 0 },
       }
-      log.info('已恢复本地记录', { key: this.key, count: this.state.items.length })
+      const migrated = migrateLineBreaks(this.state.items)
+      log.info('已恢复本地记录', { key: this.key, count: this.state.items.length, migratedLineBreaks: migrated })
     } catch (err) {
       const backupKey = `${this.key}:corrupt:${Date.now()}`
       this.storage.setItem(backupKey, raw)

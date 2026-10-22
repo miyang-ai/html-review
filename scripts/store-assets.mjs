@@ -111,10 +111,35 @@ async function promoTile(browser) {
   await page.close()
 }
 
+/**
+ * 背景：商店的精选位使用 1400×560 大型宣传图，没有这张图就不会被选入横幅推荐。
+ * 设计意图：左侧沿用小型宣传图的图标和标题排版，右侧放修改清单截图，一眼看出产品形态；截图取本次刚生成的 03。
+ * 约束：必须在 featureShots 之后调用。
+ */
+async function marqueeTile(browser) {
+  const icon = readFileSync(join(root, 'extension/icons/icon-128.png')).toString('base64')
+  const shotB64 = readFileSync(join(out, '03-change-list.png')).toString('base64')
+  const page = await browser.newPage()
+  await page.setViewport({ width: 1400, height: 560, deviceScaleFactor: 1 })
+  await page.setContent(`<!doctype html><html><body style="margin:0;width:1400px;height:560px;overflow:hidden;background:#f8fafc;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif;position:relative">
+    <div style="position:absolute;left:84px;top:0;bottom:0;width:470px;display:flex;flex-direction:column;justify-content:center">
+      <img src="data:image/png;base64,${icon}" width="112" height="112" style="margin-left:-14px">
+      <div style="font-size:52px;font-weight:700;letter-spacing:-1px;margin-top:18px">HTML Review</div>
+      <div style="width:64px;height:5px;border-radius:3px;background:#f59e0b;margin:18px 0 22px"></div>
+      <div style="font-size:24px;color:#334155;line-height:1.6">在网页上直接改字、批注<br>一键把修改单交给 AI</div>
+    </div>
+    <img src="data:image/png;base64,${shotB64}" style="position:absolute;left:640px;top:64px;width:860px;border-radius:14px;box-shadow:0 24px 60px rgba(15,23,42,0.18),0 0 0 1px rgba(15,23,42,0.08)">
+  </body></html>`)
+  await page.waitForFunction(() => [...document.images].every((i) => i.complete))
+  await shot(page, 'promo-marquee-1400x560.png')
+  await page.close()
+}
+
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--allow-file-access-from-files'] })
 try {
   await featureShots(browser)
   await promoTile(browser)
+  await marqueeTile(browser)
 } finally {
   await browser.close()
 }

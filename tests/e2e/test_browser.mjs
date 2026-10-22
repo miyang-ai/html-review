@@ -422,3 +422,55 @@ test('挂载中途失败：回滚样式与标记，修复后可正常再挂载',
   assert.deepEqual(await state(), { mounted: true, hosts: 1, mark: true, sheets: 1 })
   await openFresh()
 })
+
+test('改字换行：Shift+Enter 与粘贴多行写成 <br>，编辑中、提交后、刷新后显示一致；格式命令被拦截', async () => {
+  await openFresh()
+  await page.keyboard.press('t')
+  await scrollTo('.infer')
+  const r = await rectOf('.infer')
+  await page.mouse.click(r.x + r.w / 2, r.y + 8)
+  assert.equal(await page.$eval('.infer', (el) => el.hasAttribute('data-hr-editing')), true)
+  const height = () => page.$eval('.infer', (el) => el.getBoundingClientRect().height)
+  const oneLine = await height()
+
+  await page.evaluate(() => {
+    const el = document.querySelector('.infer')
+    const tn = [...el.childNodes].find((n) => n.nodeType === 3 && n.textContent.includes('，'))
+    const range = document.createRange()
+    range.setStart(tn, tn.textContent.indexOf('，') + 1)
+    range.collapse(true)
+    getSelection().removeAllRanges()
+    getSelection().addRange(range)
+  })
+  await page.keyboard.down('Shift')
+  await page.keyboard.press('Enter')
+  await page.keyboard.up('Shift')
+  await page.evaluate(() => {
+    const dt = new DataTransfer()
+    dt.setData('text/plain', '粘贴第一行\n粘贴第二行')
+    dt.setData('text/html', '<b>粘贴第一行</b>')
+    document.querySelector('.infer').dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }))
+  })
+  const bold = await page.$eval('.infer', (el) => {
+    const ev = new InputEvent('beforeinput', { inputType: 'formatBold', bubbles: true, cancelable: true })
+    el.dispatchEvent(ev)
+    return ev.defaultPrevented
+  })
+  assert.equal(bold, true, '加粗被拦截')
+
+  const editing = await height()
+  assert.ok(editing > oneLine * 1.5, `编辑中应多出换行：${oneLine} → ${editing}`)
+  await page.keyboard.press('Enter')
+  assert.equal(await page.$eval('.infer', (el) => el.hasAttribute('contenteditable')), false)
+  assert.equal(await height(), editing, '提交后高度不变')
+
+  const rec = (await items()).find((i) => i.kind === 'edit' && i.beforeText.includes('AI 朋友不会'))
+  assert.ok(rec, '生成改字记录')
+  assert.equal((rec.afterHtml.match(/<br>/g) || []).length, 2, rec.afterHtml)
+  assert.ok(!rec.afterHtml.includes('\n'), '不含 \\n 字符')
+  assert.ok(!rec.afterHtml.includes('<b>'), '粘贴不带格式')
+
+  await openFresh()
+  await sleep(200)
+  assert.equal(await height(), editing, '刷新恢复后高度不变')
+})

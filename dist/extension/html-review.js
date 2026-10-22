@@ -303,6 +303,15 @@
     const norm = (s) => s.replace(/&nbsp;|\u00a0/g, " ").replace(/\s+/g, " ").trim();
     return norm(a) === norm(b);
   }
+  function migrateLineBreaks(items) {
+    let n = 0;
+    for (const item of items) {
+      if (item.kind !== "edit" || !item.afterHtml.includes("\n") || item.beforeHtml.includes("\n")) continue;
+      item.afterHtml = item.afterHtml.replace(/\r?\n/g, "<br>");
+      n++;
+    }
+    return n;
+  }
   function emptyState(page, title) {
     return { version: 1, page, title, seq: { edit: 0, comment: 0, reply: 0 }, items: [] };
   }
@@ -329,7 +338,8 @@
           ...parsed,
           seq: { edit: parsed.seq?.edit ?? 0, comment: parsed.seq?.comment ?? 0, reply: parsed.seq?.reply ?? 0 }
         };
-        log.info("已恢复本地记录", { key: this.key, count: this.state.items.length });
+        const migrated = migrateLineBreaks(this.state.items);
+        log.info("已恢复本地记录", { key: this.key, count: this.state.items.length, migratedLineBreaks: migrated });
       } catch (err) {
         const backupKey = `${this.key}:corrupt:${Date.now()}`;
         this.storage.setItem(backupKey, raw);
@@ -1094,25 +1104,25 @@ ${body}
 
   // src/modes/textEdit.ts
   var PERSIST_DELAY = 500;
-  var plaintextOnlySupport = null;
-  function supportsPlaintextOnly() {
-    if (plaintextOnlySupport === null) {
-      const probe = document.createElement("div");
-      try {
-        probe.contentEditable = "plaintext-only";
-        plaintextOnlySupport = probe.contentEditable === "plaintext-only";
-      } catch (err) {
-        log.info("浏览器不支持 plaintext-only，退回 contenteditable=true", err);
-        plaintextOnlySupport = false;
-      }
-    }
-    return plaintextOnlySupport;
-  }
+  var BLOCKED_INPUT = /^(format|insertFromDrop$|deleteByDrag$|insertFromPasteAsQuotation$)/;
   var TextEditor = class {
     constructor(app) {
       this.app = app;
       this.s = null;
       this.persistTimer = 0;
+      /**
+       * 背景：Enter 已在 keydown 里拦成提交，但 Ctrl+O 之类的系统编辑命令仍可能插入段落，Chrome 会生成 <div>。
+       * 设计意图：格式命令和拖放直接丢弃；插入段落改成插入 <br>，和 Shift+Enter 结果一致。
+       */
+      this.onBeforeInput = (e) => {
+        if (BLOCKED_INPUT.test(e.inputType)) {
+          e.preventDefault();
+          log.info("已拦截格式 / 拖放输入", e.inputType);
+        } else if (e.inputType === "insertParagraph") {
+          e.preventDefault();
+          document.execCommand("insertLineBreak");
+        }
+      };
       this.onInput = () => {
         window.clearTimeout(this.persistTimer);
         this.persistTimer = window.setTimeout(() => this.persist(), PERSIST_DELAY);
@@ -1131,11 +1141,18 @@ ${body}
         }
         this.commit();
       };
+      /**
+       * 背景：粘贴富文本会带进格式标签；直接 insertText 一段含 \n 的文字，Chrome 会把后面几行包进 <div>。
+       * 设计意图：只取纯文本，按行插入，行与行之间用 insertLineBreak 写成 <br>，和手动换行结果一致，也能撤销。
+       */
       this.onPaste = (e) => {
-        if (!this.s || this.s.el.contentEditable === "plaintext-only") return;
+        if (!this.s) return;
         e.preventDefault();
-        const text = e.clipboardData?.getData("text/plain") ?? "";
-        document.execCommand("insertText", false, text);
+        const lines = (e.clipboardData?.getData("text/plain") ?? "").split(/\r\n|\r|\n/);
+        lines.forEach((line, i) => {
+          if (i > 0) document.execCommand("insertLineBreak");
+          if (line) document.execCommand("insertText", false, line);
+        });
       };
     }
     get active() {
@@ -1186,8 +1203,9 @@ ${body}
       const own = unit.getAttribute("contenteditable");
       if (own !== null) unit.setAttribute("data-hr-own-editable", own);
       unit.setAttribute("data-hr-editing", "");
-      unit.contentEditable = supportsPlaintextOnly() ? "plaintext-only" : "true";
+      unit.contentEditable = "true";
       unit.spellcheck = false;
+      unit.addEventListener("beforeinput", this.onBeforeInput);
       unit.addEventListener("input", this.onInput);
       unit.addEventListener("focusout", this.onFocusOut);
       unit.addEventListener("paste", this.onPaste);
@@ -1271,6 +1289,7 @@ ${body}
       this.s = null;
       window.clearTimeout(this.persistTimer);
       const el = s.el;
+      el.removeEventListener("beforeinput", this.onBeforeInput);
       el.removeEventListener("input", this.onInput);
       el.removeEventListener("focusout", this.onFocusOut);
       el.removeEventListener("paste", this.onPaste);
