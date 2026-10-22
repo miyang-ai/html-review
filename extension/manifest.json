@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_extName__",
+  "short_name": "HTML Review",
+  "description": "__MSG_extDescription__",
+  "version": "0.0.0",
+  "default_locale": "zh_CN",
+  "homepage_url": "https://github.com/miyang-ai/html-review",
+  "minimum_chrome_version": "111",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_title": "__MSG_actionTitle__",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+R",
+        "mac": "Alt+Shift+R"
+      },
+      "description": "__MSG_commandDescription__"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["activeTab", "scripting"]
+}

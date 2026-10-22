@@ -1,0 +1,8 @@
+{
+  "extName": { "message": "HTML Review · 页面改字与批注" },
+  "extDescription": { "message": "在任意网页上直接改字、点选加批注，一键复制精确的修改单交给 AI 改源文件。只在你点击时作用于当前标签页。" },
+  "actionTitle": { "message": "HTML Review：在当前页面开启审阅（Alt+Shift+R）" },
+  "commandDescription": { "message": "在当前页面开启审阅；已开启时打开修改清单" },
+  "badgeRestricted": { "message": "浏览器不允许插件在这个页面上运行（浏览器设置页、应用商店等）" },
+  "badgeFailed": { "message": "无法在这个页面开启审阅：$ERROR$", "placeholders": { "error": { "content": "$1" } } }
+}

@@ -1,0 +1,8 @@
+{
+  "extName": { "message": "HTML Review · Edit & Comment on Any Page" },
+  "extDescription": { "message": "Edit text and comment right on any web page, then copy a precise change request for your AI agent. Runs only on the tab you click." },
+  "actionTitle": { "message": "HTML Review: start reviewing this page (Alt+Shift+R)" },
+  "commandDescription": { "message": "Start reviewing this page; open the change list if already running" },
+  "badgeRestricted": { "message": "The browser does not allow extensions on this page (settings, web store, etc.)" },
+  "badgeFailed": { "message": "Could not start review on this page: $ERROR$", "placeholders": { "error": { "content": "$1" } } }
+}

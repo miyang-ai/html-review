@@ -315,3 +315,98 @@ flowchart TD
 - [2026-10-22 22:01] PRD 获批开工。快捷键调整为改字 `T` / `Alt + T`、批注 `C` / `Alt + C`；批注支持框选与多选，悬停高亮边缘。
 - 不使用 React，采用原生 TS + Shadow DOM（见 6.2）。
 - GitHub 仓库暂不创建，待另行确认。
+- [2026-10-22 22:49] 开源到 GitHub 组织仓库 `miyang-ai/html-review`，MIT 协议，版权归 Miyang Tech (Shanghai) Co., Ltd.；README 顶部加 Agent Skill 入口。
+- [2026-10-22 22:56] 浏览器插件方案获批开工（第十章）：GitHub Release + 应用商店材料、Chrome 系、点击注入、数据存页面 localStorage。追加要求：引导页加米羊官网、「关于」公司信息和招聘邀请（见 10.7）。
+
+## 十、浏览器插件（v0.2.0）
+
+### 10.1 需求复述
+
+把现有工具再包一层 Chrome 插件，作为第三种挂载方式，和 script 标签、书签并存，同一份核心代码一起构建、一起发布。
+
+- **触发**：点浏览器工具栏上的插件图标，或按快捷键 `Alt+Shift+R`（可在 `chrome://extensions/shortcuts` 改），只在当前标签页注入。已经挂载的页面再触发一次，打开修改清单（与书签行为一致）。
+- **权限最小化**：只申请 `activeTab` 和 `scripting`。安装时不出现「读取和更改您在所有网站上的数据」警告；插件只在你点击的那个标签页、那一刻拿到权限。
+- **数据**：继续存页面的 `localStorage`，键名不变。同一个页面无论用 script 标签、书签还是插件打开，看到的是同一份修改记录。
+- **浏览器**：Chrome 系（Chrome、Edge、Arc、Brave），Manifest V3。
+- **发布**：两条渠道。
+  - GitHub Release 附插件 zip，解压后在 `chrome://extensions` 打开开发者模式、「加载已解压的扩展程序」即可用；clone 仓库的人也可以直接加载 `dist/extension/`。
+  - 准备好 Chrome 应用商店上架所需的全部材料（商店文案中英文、截图、宣传图、隐私说明、权限用途说明），由你用米羊的开发者账号提交审核。
+
+### 10.2 相比书签的改进
+
+| 场景 | 书签 | 插件 |
+|---|---|---|
+| 本地 `file://` 页面 | 可用 | 可用，需在插件详情页打开「允许访问文件网址」（首次会引导） |
+| 设置了严格 CSP 的线上网站（GitHub、Notion 等） | 被拦截 | 可用，插件注入不受页面 CSP 限制 |
+| 触发方式 | 点书签栏 | 点图标或快捷键 |
+| 更新 | 重新拖一次书签 | 应用商店自动更新；zip 版重新加载 |
+
+### 10.3 注入流程
+
+```mermaid
+flowchart TD
+    A[点插件图标 / Alt+Shift+R] --> B{当前标签页地址}
+    B -- chrome:// / 应用商店 / 其他插件页 --> C[浏览器禁止注入: 图标角标显示提示, 悬停说明原因]
+    B -- file:// --> D{已允许访问文件网址?}
+    D -- 否 --> E[打开插件引导页: 说明如何打开开关, 一键跳到插件详情页]
+    D -- 是 --> F
+    B -- http / https --> F[在页面主环境注入 html-review.js]
+    F --> G{页面上已挂载?}
+    G -- 否 --> H[挂载工具条, 从 localStorage 恢复修改]
+    G -- 是, 例如页面已有 script 标签 --> I[打开修改清单, 不重复挂载]
+```
+
+注入到页面主环境（MAIN world），和 script 标签挂载共用同一个防重复标记 `window.__htmlReview`。如果注入到插件的隔离环境，看不到页面上已经通过 script 标签挂载的实例，会出现两套工具条。
+
+### 10.4 工程改动
+
+```text
+extension/
+├── manifest.json        # MV3：action、commands、background service worker；permissions: activeTab, scripting
+├── background.ts        # 点击 / 快捷键 → 判断页面类型 → 注入或引导；不可注入时设置角标与提示
+├── help.html / help.ts  # 引导页：打开文件网址访问权限、快捷键、使用说明
+└── icons/               # 16 / 32 / 48 / 128 PNG（由 Lucide pen-line 渲染，和工具条主按钮同款）
+scripts/
+└── render-icons.mjs     # 用 puppeteer-core 把 SVG 渲染成各尺寸 PNG，产物提交到仓库，构建时不依赖浏览器
+store/                   # 应用商店上架材料
+├── listing.zh.md / listing.en.md   # 名称、简介、详细说明
+├── privacy.md                       # 隐私说明：不收集、不上传任何数据，记录只存在本地浏览器
+├── permissions.md                   # activeTab / scripting 用途说明（审核必填）
+└── screenshots/                     # 1280×800 截图 ×3、440×280 宣传图，由脚本从 PlayGround 生成
+```
+
+- `build.mjs`：额外输出 `dist/extension/`（manifest、background.js、help、icons、html-review.js 副本），可直接「加载已解压的扩展程序」。
+- `npm run pack:ext`：把 `dist/extension/` 打成 `release/html-review-extension-v0.2.0.zip`（`release/` 不进仓库，发布时上传到 GitHub Release）。打包 zip 需要新增开发依赖 `fflate`（约 30KB、零依赖的压缩库），用来在 Node 里生成 zip，避免依赖系统 `zip` 命令。
+- 版本号统一从 `package.json` 读取，构建时注入到 manifest、脚本头部注释和 `window.__htmlReview.version`，版本升到 `0.2.0`。
+- README「挂载方式」加插件一行和安装步骤；Skill 里补充「用户装了插件时无需改 HTML」。
+- 核心代码 `src/` 只改样式注入方式：工具 UI 和页面级样式改用可构造样式表（`adoptedStyleSheets`），不支持时回退 `<style>`。原因：插件能注入严格 CSP 的网站，但 CSP 的 `style-src` 会拦截脚本插入的 `<style>`，工具条会变成无样式的裸按钮；可构造样式表不受这条限制。三种挂载方式同时受益。
+
+### 10.7 引导页内容
+
+引导页在首次安装、或在 `file://` 页面上触发但未允许访问文件网址时打开，依次为：
+
+1. 本地文件访问：实时显示「允许访问文件网址」状态，未允许时给出三步操作和「打开插件详情页」按钮；切回本页自动重新检测。
+2. 怎么用：快捷键表、「修改快捷键」按钮、GitHub 链接。
+3. 数据与隐私：只作用于当前标签页、数据只在本地、三种挂载方式数据互通。
+4. 关于：米羊科技（上海）有限公司介绍（使命、愿景、旗下产品、这个工具的来历）、地址、官网 miyang.cn、联系邮箱 contact@miyang.ai。
+5. 我们在招人：招聘邀请、待遇标签、「查看在招职位」（miyang.cn/careers）、简历投递邮箱 eason@miyang.ai。
+
+README 末尾同步加「关于」和「我们在招人」两节，应用商店详细说明末尾附官网和招聘链接。
+
+### 10.5 测试
+
+用 puppeteer-core 在本机 Chrome 中加载 `dist/extension/`，通过本地 http 服务提供测试页，直接调用 service worker 里的注入函数模拟点击图标。activeTab 只能由真实点击授予，测试用的插件副本额外加 `host_permissions`，后台逻辑与正式包相同：
+
+1. 普通页面：注入后工具条出现，改字可保存。
+2. 再触发一次：打开修改清单，页面上只有一个工具条。
+3. 页面已用 script 标签挂载：触发插件不重复挂载。
+4. 响应头带严格 CSP（`script-src 'self'`）的页面：插件注入成功。
+5. 用 script 标签挂载时保存的修改，在插件注入的同一页面上能看到（数据互通）。
+6. 不可注入的页面：角标提示，无报错。
+
+### 10.6 开发代价
+
+- 复杂度：低到中。核心逻辑全部复用，新增的是插件外壳、引导页、图标、上架材料和测试。
+- 工作量：本次会话内可完成，包括测试和发布 GitHub Release v0.2.0。
+- 需要你做的：提交应用商店审核（需要 Chrome 开发者账号，一次性注册费 5 美元；审核通常几天）。
+- 新增依赖：开发依赖 `fflate`（见 10.4）。

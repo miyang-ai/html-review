@@ -9,7 +9,8 @@ const BLOCKISH = /^(block|flex|grid|table|list-item|flow-root|table-.*)$/
 
 /**
  * 背景：悬停、框选、全文搜索都要遍历页面元素，必须排除工具自己的 UI 和注入的样式。
- * 设计意图：工具 UI 全在带 HOST_ATTR 的宿主元素的 Shadow DOM 里，页面侧只需判断宿主和注入样式。
+ * 设计意图：工具 UI 全在带 HOST_ATTR 的宿主元素的 Shadow DOM 里，页面侧只需判断宿主。
+ * 页面级样式走可构造样式表，不产生 DOM 节点；回退出的 <style> 由 SKIP_TAGS 排除。
  */
 export function isToolElement(el: Element | null): boolean {
   if (!el) return false

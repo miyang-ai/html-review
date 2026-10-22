@@ -389,3 +389,36 @@ test('框选半句话：只圈住段落里的一段文字，也能选中所在�
   await page.keyboard.press('Escape')
   await page.keyboard.press('Escape')
 })
+
+test('挂载中途失败：回滚样式与标记，修复后可正常再挂载', async () => {
+  await openFresh()
+  const scriptUrl = pathToFileURL(join(root, 'dist/html-review.js')).href
+  const remount = (url) => page.evaluate((u) => new Promise((resolve) => {
+    const s = document.createElement('script')
+    s.src = `${u}?t=${Date.now()}`
+    s.onload = resolve
+    document.body.appendChild(s)
+  }), url)
+  const state = () => page.evaluate(() => ({
+    mounted: !!window.__htmlReview,
+    hosts: document.querySelectorAll('html-review-root').length,
+    mark: document.documentElement.hasAttribute('data-hr-styles'),
+    sheets: document.adoptedStyleSheets.length,
+  }))
+
+  await page.evaluate(() => {
+    window.__htmlReview.destroy()
+    window.__alerts = []
+    window.alert = (m) => window.__alerts.push(m)
+    window.__observe = MutationObserver.prototype.observe
+    MutationObserver.prototype.observe = () => { throw new Error('observe blocked') }
+  })
+  await remount(scriptUrl)
+  assert.deepEqual(await state(), { mounted: false, hosts: 0, mark: false, sheets: 0 })
+  assert.match((await page.evaluate(() => window.__alerts))[0], /observe blocked/)
+
+  await page.evaluate(() => { MutationObserver.prototype.observe = window.__observe })
+  await remount(scriptUrl)
+  assert.deepEqual(await state(), { mounted: true, hosts: 1, mark: true, sheets: 1 })
+  await openFresh()
+})

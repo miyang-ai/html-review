@@ -16,6 +16,7 @@ import { CommentPopover } from './ui/popover'
 import { Sidebar, type SidebarEntry } from './ui/sidebar'
 import { Toast } from './ui/toast'
 import { injectHostStyles } from './ui/hostStyles'
+import { adoptCss } from './ui/sheets'
 import { S, fmt } from './ui/strings'
 import { h } from './ui/h'
 import css from './ui/styles.css'
@@ -74,10 +75,9 @@ export class App {
     this.host.setAttribute(HOST_ATTR, '')
     this.host.style.cssText = 'all:initial;position:fixed;top:0;left:0;width:0;height:0;z-index:2147483647;'
     const shadow = this.host.attachShadow({ mode: 'open' })
-    const style = doc.createElement('style')
-    style.textContent = css
+    adoptCss(shadow, css, shadow)
     this.ui = h('div', { class: 'root' })
-    shadow.append(style, this.ui)
+    shadow.append(this.ui)
 
     this.store = new ReviewStore(window.localStorage, this.storageKey, this.pageId, doc.title)
     this.overlay = new Overlay(this.ui)
@@ -116,7 +116,7 @@ export class App {
    * 设计意图：先恢复数据，再挂事件，最后做一次全量定位，保证用户看到的第一帧就是上次改完的样子。
    */
   init(): void {
-    injectHostStyles(this.doc)
+    this.cleanups.push(injectHostStyles(this.doc))
     this.doc.documentElement.appendChild(this.host)
     this.store.onError = (msg) => this.toast.show(msg, { error: true, ms: 5000 })
     this.store.load()
@@ -162,7 +162,6 @@ export class App {
     this.setHoverAttr(null)
     this.doc.documentElement.removeAttribute('data-hr-mode')
     this.host.remove()
-    this.doc.querySelector(`style[${HOST_ATTR}]`)?.remove()
     log.info('已卸载')
   }
 

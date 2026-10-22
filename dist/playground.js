@@ -1,4 +1,4 @@
-/*! HTML Review v0.1.0 | MIT | Copyright (c) 2025 Miyang Tech (Shanghai) Co., Ltd. | Icons: Lucide (ISC) */
+/*! HTML Review v0.2.0 | MIT | Copyright (c) 2025 Miyang Tech (Shanghai) Co., Ltd. | Icons: Lucide (ISC) */
 "use strict";
 (() => {
   // src/ui/styles.css

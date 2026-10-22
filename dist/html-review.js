@@ -1,4 +1,4 @@
-/*! HTML Review v0.1.0 | MIT | Copyright (c) 2025 Miyang Tech (Shanghai) Co., Ltd. | Icons: Lucide (ISC) */
+/*! HTML Review v0.2.0 | MIT | Copyright (c) 2025 Miyang Tech (Shanghai) Co., Ltd. | Icons: Lucide (ISC) */
 "use strict";
 (() => {
   // src/dom.ts
@@ -1931,7 +1931,31 @@ ${body}
     }
   };
 
+  // src/ui/sheets.ts
+  function adoptCss(root, css, fallbackParent) {
+    const view = (root instanceof Document ? root : root.ownerDocument).defaultView;
+    const Sheet = view?.CSSStyleSheet;
+    if (Sheet && "adoptedStyleSheets" in root && "replaceSync" in Sheet.prototype) {
+      try {
+        const sheet = new Sheet();
+        sheet.replaceSync(css);
+        root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet];
+        return () => {
+          root.adoptedStyleSheets = root.adoptedStyleSheets.filter((s) => s !== sheet);
+        };
+      } catch (err) {
+        console.warn("[html-review] 可构造样式表不可用，回退到 <style>", err);
+      }
+    }
+    const doc = root instanceof Document ? root : root.ownerDocument;
+    const style = doc.createElement("style");
+    style.textContent = css;
+    fallbackParent.appendChild(style);
+    return () => style.remove();
+  }
+
   // src/ui/hostStyles.ts
+  var MARK_ATTR = `${HR_ATTR_PREFIX}styles`;
   var CSS2 = `
 [data-hr-edit-id] {
   background-color: rgba(250, 204, 21, 0.28) !important;
@@ -1955,13 +1979,15 @@ html[data-hr-mode="comment"], html[data-hr-mode="comment"] * {
 }
 `;
   function injectHostStyles(doc) {
-    const existing = doc.querySelector(`style[${HOST_ATTR}]`);
-    if (existing) return existing;
-    const style = doc.createElement("style");
-    style.setAttribute(HOST_ATTR, "styles");
-    style.textContent = CSS2;
-    (doc.head ?? doc.documentElement).appendChild(style);
-    return style;
+    const root = doc.documentElement;
+    if (root.hasAttribute(MARK_ATTR)) return () => {
+    };
+    root.setAttribute(MARK_ATTR, "");
+    const remove = adoptCss(doc, CSS2, doc.head ?? root);
+    return () => {
+      remove();
+      root.removeAttribute(MARK_ATTR);
+    };
   }
 
   // src/ui/styles.css
@@ -1992,10 +2018,9 @@ html[data-hr-mode="comment"], html[data-hr-mode="comment"] * {
       this.host.setAttribute(HOST_ATTR, "");
       this.host.style.cssText = "all:initial;position:fixed;top:0;left:0;width:0;height:0;z-index:2147483647;";
       const shadow = this.host.attachShadow({ mode: "open" });
-      const style = doc.createElement("style");
-      style.textContent = styles_default;
+      adoptCss(shadow, styles_default, shadow);
       this.ui = h("div", { class: "root" });
-      shadow.append(style, this.ui);
+      shadow.append(this.ui);
       this.store = new ReviewStore(window.localStorage, this.storageKey, this.pageId, doc.title);
       this.overlay = new Overlay(this.ui);
       this.toast = new Toast(this.ui);
@@ -2032,7 +2057,7 @@ html[data-hr-mode="comment"], html[data-hr-mode="comment"] * {
      * 设计意图：先恢复数据，再挂事件，最后做一次全量定位，保证用户看到的第一帧就是上次改完的样子。
      */
     init() {
-      injectHostStyles(this.doc);
+      this.cleanups.push(injectHostStyles(this.doc));
       this.doc.documentElement.appendChild(this.host);
       this.store.onError = (msg) => this.toast.show(msg, { error: true, ms: 5e3 });
       this.store.load();
@@ -2074,7 +2099,6 @@ html[data-hr-mode="comment"], html[data-hr-mode="comment"] * {
       this.setHoverAttr(null);
       this.doc.documentElement.removeAttribute("data-hr-mode");
       this.host.remove();
-      this.doc.querySelector(`style[${HOST_ATTR}]`)?.remove();
       log.info("已卸载");
     }
     // ---------------- 模式 ----------------
@@ -2592,7 +2616,7 @@ html[data-hr-mode="comment"], html[data-hr-mode="comment"] * {
   }
 
   // src/index.ts
-  var VERSION = "0.1.0";
+  var VERSION = true ? "0.2.0" : "dev";
   function mount() {
     const existing = window.__htmlReview;
     if (existing) {
@@ -2602,7 +2626,16 @@ html[data-hr-mode="comment"], html[data-hr-mode="comment"] * {
     }
     try {
       const app = new App(document);
-      app.init();
+      try {
+        app.init();
+      } catch (err) {
+        try {
+          app.destroy();
+        } catch (rollbackErr) {
+          log.error("挂载失败后回滚也失败", rollbackErr);
+        }
+        throw err;
+      }
       window.__htmlReview = {
         app,
         version: VERSION,

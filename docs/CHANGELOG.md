@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-10-22 23:08 · v0.2.0
+
+### 新增：Chrome 浏览器插件
+**时间**：2026-10-22 23:08
+**内容**：
+- 第三种挂载方式。点图标或按 `Alt+Shift+R` 在当前标签页注入，再按一次打开修改清单；权限只有 `activeTab` + `scripting`
+- 注入到页面主环境，与 script 标签挂载共用防重复标记和 localStorage 数据
+- `file://` 页面未允许访问文件网址时打开引导页；浏览器内部页、应用商店等不可注入页面在图标上显示角标和原因，页面跳转后自动清除
+- 引导页：本地文件权限实时状态、快捷键、隐私说明、「关于」米羊科技（上海）有限公司与官网 miyang.cn、招聘邀请（miyang.cn/careers、eason@miyang.ai）
+- 应用商店上架材料：中英文文案、隐私说明、权限用途说明、4 张 1280×800 截图、440×280 宣传图，均可由脚本重新生成
+- `npm run pack:ext` 生成 `release/html-review-extension-v<版本>.zip`
+**修改文件**：`extension/*`（新增）、`scripts/*`（新增）、`store/*`（新增）、`tests/e2e/test_extension.mjs`（新增）、`build.mjs`、`package.json`、`tsconfig.extension.json`（新增）、`.gitignore`、`README.md`、`skills/html-review/SKILL.md`、`PRD.md`
+**依赖变更**：新增开发依赖 `@types/chrome`（插件 API 类型）、`fflate`（Node 内生成 zip，零依赖）；不进入产物
+**状态**：✅ 已完成（单元测试 58 项、页面端到端 19 项、插件端到端 9 项通过）
+
+### 改进：样式改用可构造样式表，严格 CSP 网站上样式正常
+**时间**：2026-10-22 23:08
+**现象**：插件可以注入设置了 `style-src 'self'` 的网站，但脚本插入的 `<style>` 会被 CSP 拦截，工具条无样式
+**修复**：新增 `src/ui/sheets.ts`（`adoptCss`），工具 UI 与页面级样式改经 `adoptedStyleSheets` 注入，不支持时回退 `<style>`；页面级样式防重复改用 `html[data-hr-styles]` 标记
+**修复文件**：`src/ui/sheets.ts`、`src/ui/hostStyles.ts`、`src/app.ts`
+**状态**：✅ 已修复
+
+### BUG-发版审查：挂载中途失败会残留页面样式和防重复标记
+**时间**：2026-10-22 23:15
+**现象**：发版前差异审查发现，`init` 在注入页面样式之后抛错时，`html[data-hr-styles]` 标记和样式表留在页面上，之后再挂载会跳过样式注入
+**根因**：卸载函数登记在 `cleanups` 里，只有 `destroy` 会执行，挂载失败路径没有调用
+**修复**：`mount` 中 `init` 失败时立即 `destroy` 回滚再报错；补充 `sheets` / `hostStyles` 单元测试 4 项、「挂载失败回滚」端到端测试 1 项；更新 `isToolElement` 过时注释
+**修复文件**：`src/index.ts`、`src/dom.ts`、`tests/test_styles.ts`、`tests/e2e/test_browser.mjs`
+**状态**：✅ 已修复（单元测试 58 项、端到端 28 项通过）
+
+### 改进：版本号统一
+**内容**：版本号只在 `package.json` 维护，构建时注入脚本头部注释、`window.__htmlReview.version` 和插件 manifest；版本升至 0.2.0
+**修改文件**：`build.mjs`、`src/index.ts`、`package.json`
+**状态**：✅ 已完成
+
 ## 2026-10-22 22:49
 
 ### 开源发布准备：Agent Skill、路径脱敏

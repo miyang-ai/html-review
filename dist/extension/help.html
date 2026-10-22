@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HTML Review · 使用说明</title>
+<link rel="stylesheet" href="help.css">
+</head>
+<body>
+<main>
+  <header class="hero">
+    <img class="logo" src="icons/icon-128.png" alt="" width="56" height="56">
+    <div>
+      <h1>HTML Review <span class="ver" id="version"></span></h1>
+      <p class="lead">在任意网页上直接改字、点选加批注，一键复制精确的修改单交给 AI 改源文件。</p>
+    </div>
+  </header>
+
+  <section class="card" id="file-access">
+    <h2><span data-icon="folder-open"></span>本地文件访问</h2>
+    <div class="status ok" id="file-ok" hidden>
+      <span data-icon="circle-check"></span>
+      <span>已允许访问本地文件，<code>file://</code> 打开的 HTML 可以直接审阅。</span>
+    </div>
+    <div class="status warn" id="file-off" hidden>
+      <span data-icon="triangle-alert"></span>
+      <span>还没有允许访问本地文件。Chrome 默认不让插件读取 <code>file://</code> 页面，审阅本地 HTML 前需要打开一次。</span>
+    </div>
+    <ol class="steps" id="file-steps" hidden>
+      <li>点下面的按钮，打开插件详情页。</li>
+      <li>找到「允许访问文件网址」，打开开关。</li>
+      <li>回到你的 HTML 页面，刷新后点插件图标或按 <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd>。</li>
+    </ol>
+    <div class="actions">
+      <button class="btn primary" id="open-details" type="button"><span data-icon="settings"></span>打开插件详情页</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span data-icon="keyboard"></span>怎么用</h2>
+    <table>
+      <tr><td><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> 或点图标</td><td>在当前页面开启审阅，右下角出现工具条；已开启时打开修改清单</td></tr>
+      <tr><td><kbd>T</kbd> 或 <kbd>Alt</kbd>+<kbd>T</kbd></td><td>改字模式：悬停高亮可改的文字，点击直接改；<kbd>Enter</kbd> 保存，<kbd>Shift</kbd>+<kbd>Enter</kbd> 换行，<kbd>Esc</kbd> 放弃</td></tr>
+      <tr><td><kbd>C</kbd> 或 <kbd>Alt</kbd>+<kbd>C</kbd></td><td>批注模式：单击选中，拖拽框选，<kbd>Shift</kbd>+单击多选，<kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> 切换父子元素</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>逐级退出：关闭弹窗、清空选择、退出模式、关闭清单</td></tr>
+    </table>
+    <p class="muted">中文输入法开启时单字母会被输入法接收，请用 <kbd>Alt</kbd> 组合键。改完点工具条「复制修改要求」，粘贴给 Cursor、Claude Code 等 AI，由它按修改单改源文件。</p>
+    <div class="actions">
+      <button class="btn" id="open-shortcuts" type="button"><span data-icon="keyboard"></span>修改快捷键</button>
+      <a class="btn" href="https://github.com/miyang-ai/html-review" target="_blank" rel="noopener"><span data-icon="code-xml"></span>GitHub 源码与文档</a>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span data-icon="shield-check"></span>数据与隐私</h2>
+    <ul class="plain">
+      <li>插件只在你点击图标或按快捷键时，作用于当前这一个标签页。</li>
+      <li>改字和批注保存在该页面的浏览器本地存储里，不上传到任何服务器，插件也不联网。</li>
+      <li>同一个页面用插件、书签或 <code>&lt;script&gt;</code> 标签打开，看到的是同一份修改记录。</li>
+    </ul>
+  </section>
+
+  <section class="card about" id="about">
+    <h2><span data-icon="building-2"></span>关于</h2>
+    <p>HTML Review 由<strong>米羊科技（上海）有限公司</strong>开发并开源，MIT 协议。</p>
+    <p>米羊的使命是让每个普通人都能用好 AI，愿景是让我们的应用运行在每一台设备上。旗下产品有白艾莉 Alice（活在真实时间线里的 AI 角色与共创世界）、小山学堂、XSCT 场景化大模型评测。这个工具来自我们自己的日常：融资材料、调研报告、产品页都是 HTML，我们需要一种在页面上直接改、改完交给 AI 的方式。</p>
+    <p class="meta"><span data-icon="map-pin"></span>上海 · 徐汇漕河泾</p>
+    <div class="actions">
+      <a class="btn" href="https://miyang.cn" target="_blank" rel="noopener"><span data-icon="external-link"></span>米羊官网 miyang.cn</a>
+      <a class="btn" href="mailto:contact@miyang.ai"><span data-icon="mail"></span>contact@miyang.ai</a>
+    </div>
+  </section>
+
+  <section class="card join" id="join">
+    <h2><span data-icon="briefcase-business"></span>我们在招人</h2>
+    <p>会为页面上的一个字较真的人，大概也会喜欢我们的团队。</p>
+    <p>我们在组建 Alice 的早期核心团队，寻找愿意投入 2–3 年、一起做件可能很伟大的事的超级个体：看到 AI 底层变化会真的兴奋，对工程、叙事与产品审美有偏执，相信一个人加 AI 能顶一个团队。</p>
+    <div class="pills">
+      <span>上海 · 徐汇漕河泾</span>
+      <span>现金薪资 + 期权</span>
+      <span>Coding Token 报销</span>
+      <span>早期团队</span>
+    </div>
+    <div class="actions">
+      <a class="btn primary" href="https://miyang.cn/careers" target="_blank" rel="noopener"><span data-icon="external-link"></span>查看在招职位</a>
+      <a class="btn" href="mailto:eason@miyang.ai?subject=%E6%9D%A5%E8%87%AA%20HTML%20Review%20%E7%9A%84%E6%B1%82%E8%81%8C"><span data-icon="mail"></span>简历投递 eason@miyang.ai</a>
+    </div>
+  </section>
+
+  <footer>Copyright © 2025 Miyang Tech (Shanghai) Co., Ltd. · MIT License · 图标来自 Lucide（ISC）</footer>
+</main>
+<script src="help.js"></script>
+</body>
+</html>

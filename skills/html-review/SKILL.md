@@ -34,6 +34,10 @@ curl -fL https://raw.githubusercontent.com/miyang-ai/html-review/main/dist/html-
 
 ## 2. 挂载到目标 HTML
 
+**用户装了浏览器插件时，不需要改 HTML**：让用户在页面上点插件图标或按 `Alt+Shift+R` 即可（本地文件需要在插件详情页打开「允许访问文件网址」）。插件、书签、script 标签三种方式共用同一份本地数据。用户想装插件时，告诉他：`chrome://extensions` → 打开「开发者模式」→「加载已解压的扩展程序」→ 选 `~/.html-review/dist/extension/`。
+
+需要页面常驻工具（不想每次点插件，或要发给没装插件的人看）时，再改 HTML：
+
 先检查目标文件是否已经挂载过（搜索 `html-review`），已有就跳过，避免重复。
 
 按场景二选一：
