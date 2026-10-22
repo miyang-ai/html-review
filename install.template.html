@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>安装 HTML Review</title>
+<style>
+  body { margin: 0; font: 14px/1.7 -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; color: #0f172a; background: #f8fafc; }
+  main { max-width: 760px; margin: 48px auto; padding: 0 24px; }
+  h1 { font-size: 24px; margin: 0 0 8px; }
+  h2 { font-size: 16px; margin: 32px 0 8px; }
+  p, li { color: #334155; }
+  .muted { color: #64748b; }
+  .bm { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px; background: #0f172a; color: #fff; text-decoration: none; font-weight: 600; cursor: grab; }
+  .bm.alt { background: #fff; color: #0f172a; border: 1px solid #cbd5e1; }
+  pre { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; overflow: auto; font-size: 12px; }
+  table { border-collapse: collapse; width: 100%; background: #fff; }
+  td, th { border: 1px solid #e2e8f0; padding: 6px 10px; text-align: left; }
+  kbd { display: inline-block; padding: 0 6px; border: 1px solid #cbd5e1; border-bottom-width: 2px; border-radius: 4px; background: #fff; font-size: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>HTML Review</h1>
+  <p class="muted">在任意 HTML 页面上直接改字、点选加批注，一键复制修改要求交给 AI。压缩后 {{SIZE_KB}} KB，无外部依赖。</p>
+
+  <h2>方式一：书签栏一键注入（推荐）</h2>
+  <p>把下面的按钮拖到浏览器书签栏。打开任意页面后点一下书签，审阅工具就会出现在右下角；再点一次打开修改清单。</p>
+  <p>
+    <a class="bm" href="{{BOOKMARKLET}}">HTML Review</a>
+    <span class="muted">（完整内联版，任何页面可用）</span>
+  </p>
+  <p>
+    <a class="bm alt" id="loader" href="#">HTML Review · 本地加载</a>
+    <span class="muted">（只对本地 file:// 页面有效，每次加载 dist 里最新构建的脚本，适合开发时用）</span>
+  </p>
+
+  <h2>方式二：在 HTML 里挂载</h2>
+  <p>在页面 <code>&lt;/body&gt;</code> 前加一行：</p>
+  <pre id="script-tag">&lt;script src="html-review.js"&gt;&lt;/script&gt;</pre>
+  <p class="muted">也可以把 <code>html-review.js</code> 复制到页面所在目录，写成 <code>src="html-review.js"</code>，这样文件夹移动或发给别人也能用。</p>
+
+  <h2>快捷键</h2>
+  <table>
+    <tr><th>按键</th><th>作用</th></tr>
+    <tr><td><kbd>T</kbd> 或 <kbd>Alt</kbd>+<kbd>T</kbd></td><td>改字模式：悬停高亮可改的文字，点击直接修改；<kbd>Enter</kbd> 保存，<kbd>Shift</kbd>+<kbd>Enter</kbd> 换行，<kbd>Esc</kbd> 放弃</td></tr>
+    <tr><td><kbd>C</kbd> 或 <kbd>Alt</kbd>+<kbd>C</kbd></td><td>批注模式：单击选中，拖拽框选，<kbd>Shift</kbd>+单击多选，<kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd> 切换父子元素</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>逐级退出：关闭弹窗、清空选择、退出模式、关闭清单</td></tr>
+  </table>
+  <p class="muted">中文输入法开启时单字母会被输入法接收，请用 Alt 组合键。</p>
+</main>
+<script>
+  /*
+   * 背景：「本地加载」书签和挂载代码都要用到 html-review.js 在本机的绝对路径，每个人 clone 的位置不同。
+   * 设计意图：打开本页时按本页地址现算，构建产物里不写入构建者电脑上的路径，dist 可以直接提交到仓库给所有人用。
+   */
+  (function () {
+    var src = new URL('html-review.js', location.href)
+    var url = src.href.replace(/'/g, '%27')
+    var path = src.protocol === 'file:' ? decodeURIComponent(src.pathname) : src.href
+    document.getElementById('script-tag').textContent = '<script src="' + path + '"></' + 'script>'
+    document.getElementById('loader').href =
+      "javascript:(function(){var s=document.createElement('script');s.src='" + url + "?t='+Date.now();document.documentElement.appendChild(s)})()"
+  })()
+</script>
+</body>
+</html>

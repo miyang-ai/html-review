@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PlayGround · 模拟报告页</title>
+<link rel="stylesheet" href="playground.css">
+</head>
+<body>
+<nav class="pg-nav">
+  <b>HTML Review PlayGround</b>
+  <a href="index.html">模拟报告页</a>
+  <a href="components.html">组件 demo</a>
+  <span class="pg-keys">已挂载工具：按 <kbd>T</kbd> 改字，<kbd>C</kbd> 批注，<kbd>Esc</kbd> 退出</span>
+</nav>
+
+<div class="page" id="page">
+  <div class="cover">
+    <div class="kicker">用户洞察 · 测试页</div>
+    <h1>「别人」放在哪里，AI 就会被放在哪里</h1>
+    <div class="meta">这是一份模拟报告，覆盖标题、带徽标的段落、卡片栅格、表格、列表、SVG 图表、链接和 JS 动态渲染内容。</div>
+  </div>
+
+  <h2 id="thesis"><span class="no">00</span>结论与推理链</h2>
+  <p class="lead" id="target-lead"><span class="lbl data">数据</span>累了的周五晚上，87% 的人第一选择是一个人待着。独处是默认项。</p>
+  <p class="infer"><span class="lbl infer">推论</span>AI 朋友不会在用户心里开出一个新位置，它会被放进用户已经为「别人」准备好的位置里。<a href="#slot">跳到第一节</a></p>
+
+  <h2 id="slot"><span class="no">01</span>起点：「别人」有三种位置</h2>
+  <div class="grid3" id="grid">
+    <div class="card"><b>真空</b><div class="note">第一名去没人的安静处 · 20%</div><p>身边没人，屏幕里也没人。</p></div>
+    <div class="card"><b>屏幕</b><div class="note">第一名在家看网飞或油管 · 66%</div><p>身边没人，屏幕里全是别人的生活和故事。</p></div>
+    <div class="card"><b>现场</b><div class="note">第一名和好友喝酒唱 K · 13%</div><p>累了也要有人在身边。</p></div>
+  </div>
+
+  <h2 id="table"><span class="no">02</span>表格与列表</h2>
+  <table>
+    <thead><tr><th>位置</th><th>占比</th><th>不想走近 AI</th></tr></thead>
+    <tbody>
+      <tr><td>屏幕</td><td>66%</td><td>42%</td></tr>
+      <tr><td>现场</td><td>13%</td><td>0%</td></tr>
+      <tr><td>真空</td><td>20%</td><td>两极</td></tr>
+    </tbody>
+  </table>
+  <ol class="chain">
+    <li>独处是默认项，独处有三种。</li>
+    <li>多数人的位置是屏幕，所以入口是看。</li>
+    <li>屏幕里的 AI 可以像人，前提是待在虚构的框里。</li>
+  </ol>
+
+  <h2 id="chart"><span class="no">03</span>SVG 图表</h2>
+  <svg id="bar" width="420" height="120" viewBox="0 0 420 120">
+    <rect x="0" y="10" width="277" height="24" fill="#2563eb"></rect>
+    <rect x="0" y="46" width="84" height="24" fill="#93c5fd"></rect>
+    <rect x="0" y="82" width="55" height="24" fill="#bfdbfe"></rect>
+    <text x="285" y="27" font-size="12">屏幕 66%</text>
+  </svg>
+
+  <h2 id="dynamic"><span class="no">04</span>JS 动态渲染</h2>
+  <div id="dynamic-box" class="dynamic"></div>
+  <p class="muted">上面这块由脚本生成；点「重绘」会整体替换 DOM，用来测试改字效果和批注圆点能否自动挂回。</p>
+  <button id="rerender" class="pg-btn">重绘动态区域</button>
+
+  <h2 id="keys"><span class="no">05</span>快捷键隔离</h2>
+  <p>本页模拟 Deck 的翻页快捷键：页面自己监听方向键和空格。进入改字或批注模式时，这些按键不会到达页面。</p>
+  <p class="muted">页面收到的最近按键：<code id="page-keys">（无）</code></p>
+</div>
+
+<script>
+  // 模拟 Deck：页面自身的键盘处理器，用于验证工具的快捷键隔离
+  window.__pageKeys = []
+  document.addEventListener('keydown', function (e) {
+    window.__pageKeys.push(e.key)
+    document.getElementById('page-keys').textContent = window.__pageKeys.slice(-8).join(' ')
+  })
+
+  // 模拟 JS 动态渲染内容
+  function renderDynamic() {
+    var box = document.getElementById('dynamic-box')
+    box.innerHTML = '<div class="card"><b>动态卡片</b><p>这段文字由 JS 渲染，重绘后会被整体替换。</p></div>'
+  }
+  renderDynamic()
+  document.getElementById('rerender').addEventListener('click', renderDynamic)
+</script>
+<script src="../dist/html-review.js"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PlayGround · 组件 demo</title>
+<link rel="stylesheet" href="playground.css">
+</head>
+<body>
+<nav class="pg-nav">
+  <b>HTML Review PlayGround</b>
+  <a href="index.html">模拟报告页</a>
+  <a href="components.html">组件 demo</a>
+  <span class="pg-keys">每个 UI 元素的静态 demo，用于单独调样式（src/ui/styles.css）</span>
+</nav>
+
+<div class="page">
+  <h2>工具条</h2>
+  <div class="demo"><h3>收起态（有 3 条待处理）</h3><p class="desc">悬停展开</p><div class="stage" id="st-toolbar-collapsed"></div></div>
+  <div class="demo"><h3>改字模式</h3><div class="stage" id="st-toolbar-text"></div></div>
+  <div class="demo"><h3>批注模式 + 清单打开</h3><div class="stage" id="st-toolbar-comment"></div></div>
+
+  <h2>模式提示条</h2>
+  <div class="demo"><h3>改字</h3><div class="stage" id="st-badge-text"></div></div>
+  <div class="demo"><h3>批注</h3><div class="stage" id="st-badge-comment"></div></div>
+
+  <h2>覆盖层</h2>
+  <div class="demo"><h3>改字悬停</h3><div class="stage" id="st-hover-text"><span class="sample" id="sm-hover-text">累了的周五晚上，87% 的人第一选择是一个人待着。</span></div></div>
+  <div class="demo"><h3>改字悬停（已改过，显示原文）</h3><div class="stage" id="st-hover-edited"><span class="sample" id="sm-hover-edited" style="background:rgba(250,204,21,.28)">87% 的人首选一个人待着。</span></div></div>
+  <div class="demo"><h3>批注悬停</h3><div class="stage" id="st-hover-comment"><span class="sample" id="sm-hover-comment">一张卡片</span></div></div>
+  <div class="demo"><h3>多选</h3><div class="stage" id="st-selection"><span class="sample" id="sm-sel-1">卡片 A</span><span class="sample" id="sm-sel-2">卡片 B</span></div></div>
+  <div class="demo"><h3>框选矩形</h3><div class="stage" id="st-marquee"></div></div>
+  <div class="demo"><h3>批注圆点（待处理 / 已导出 / 同元素叠放）与定位闪烁</h3><p class="desc"><button class="pg-btn" id="btn-flash">闪烁定位</button></p><div class="stage" id="st-pins"><span class="sample" id="sm-pin-1">元素一</span><span class="sample" id="sm-pin-2">元素二</span></div></div>
+
+  <h2>批注弹窗</h2>
+  <div class="demo"><h3>新建（2 个元素）</h3><div class="stage mid" id="st-pop-new"></div></div>
+  <div class="demo"><h3>已有批注（已导出，含评论）</h3><div class="stage mid" id="st-pop-existing"></div></div>
+  <div class="demo"><h3>已处理</h3><div class="stage mid" id="st-pop-resolved"></div></div>
+
+  <h2>修改清单</h2>
+  <div class="demo"><h3>有条目（C1 定位失效）</h3><div class="stage tall" id="st-sidebar"></div></div>
+  <div class="demo"><h3>空状态</h3><div class="stage mid" id="st-sidebar-empty"></div></div>
+
+  <h2>提示</h2>
+  <div class="demo"><h3>复制成功 + 撤回</h3><div class="stage" id="st-toast"></div></div>
+  <div class="demo"><h3>错误</h3><div class="stage" id="st-toast-error"></div></div>
+  <div class="demo"><h3>剪贴板失败时的手动复制</h3><p class="desc"><button class="pg-btn" id="btn-manual">打开</button></p><div class="stage mid" id="st-toast-manual"></div></div>
+
+  <h2>复制出的提示词（示例数据）</h2>
+  <p class="desc">模板见 src/export/prompt.ts，改措辞后重新构建即可在这里看到效果。</p>
+  <pre class="prompt" id="prompt-text"></pre>
+</div>
+<script src="../dist/playground.js"></script>
+</body>
+</html>
